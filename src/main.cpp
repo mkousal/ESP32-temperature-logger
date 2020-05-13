@@ -47,13 +47,23 @@ void goSleep(long us) {
   esp_deep_sleep_start();
 }
 
+float getTemperature() {
+  float temp = 0;
+  for (int i = 0; i != TEMP_MEAS; i++) {
+    temp += lm.getTemperatureInDegrees();   // Get temperature from connected LM75 sensor
+    delay(100);
+  }
+  temp = temp/TEMP_MEAS;
+  return temp;
+}
+
 void setup() {
   initMCU();
-  
+  float temp = getTemperature();
   if (digitalRead(23) == 0){
-    u8x8.setFont(u8x8_font_px437wyse700a_2x2_r);
-    u8x8.print(lm.getTemperatureInDegrees());
-    goSleep(5000000);
+    u8x8.setFont(u8x8_font_inr21_2x4_f);
+    u8x8.printf("%.1f °C", ((round(temp*2))/2));
+    goSleep(1000000);
   }
 
   int wifiAttempts = 0;                       // Prompt to store WiFi connection attempts
@@ -74,16 +84,9 @@ void setup() {
   Serial.print("Using HTTPS: ");
   Serial.println(influx.isSecure());
 
-  float temp = 0;
-
-  for (int i = 0; i != TEMP_MEAS; i++){
-    temp += lm.getTemperatureInDegrees();   // Get temperature from connected LM75 sensor
-    delay(100);
-  }
-
-  temp = temp/TEMP_MEAS;
-  u8x8.setFont(u8x8_font_px437wyse700a_2x2_r);
+  u8x8.setFont(u8x8_font_inr21_2x4_f);
   u8x8.print(lm.getTemperatureInDegrees());
+  u8x8.print("°C");
   char tags[32];
   char fields[32];
   sprintf(tags, "new_tag=Yes");
