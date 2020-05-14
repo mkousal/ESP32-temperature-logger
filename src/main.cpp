@@ -6,9 +6,10 @@
 #include "LM75A.h"
 #include "credentials.h"  // Visit README.md for more info about this file
 #include "U8g2lib.h"
+#include "ESP32_MailClient.h"
 
 U8X8_SSD1306_128X32_UNIVISION_HW_I2C u8x8(U8X8_PIN_NONE, SCL, SDA);
-
+SMTPData smtpData;
 LM75A lm(true, true, true); // address pins in brackets (0x4F)
 InfluxArduino influx;
 
@@ -24,6 +25,7 @@ void initMCU() {
   WiFi.begin(WIFI_NAME, WIFI_PASS);           // Begin WiFi connection with SSID and password typed in 'credentials.h' file
   pinMode(19, OUTPUT);                        // WiFi status LED, when ON -> WiFi is connecting
   pinMode(23, INPUT_PULLUP);                  // Pin for disabling measurement
+  pinMode(16, INPUT_PULLUP);
   #ifdef OLED
     if (!oledInit) {
       u8x8.begin();
@@ -64,12 +66,28 @@ void displayTemperature(float temp) {
   u8x8.drawUTF8(x, 0, oledMSG);
 }
 
+void sendEmail(float temp) {
+  char msg[20];
+  sprintf(msg, "Teplota je: %0.1f°C", temp);
+
+  smtpData.setLogin("smtp.gmail.com", 465, EMAIL_ACCOUNT, EMAIL_PWD);
+  smtpData.setSender("Testing ESP32", "someEmail");
+  smtpData.setSubject("Testovaci email");
+  smtpData.setMessage(msg, false);
+  smtpData.addRecipient(EMAIL_RECIPIENT);
+  if(!MailClient.sendMail(smtpData))
+    Serial.println("Error sending email, " + MailClient.smtpErrorReason());
+  smtpData.empty();
+}
+
 void setup() {
   initMCU();
   float temp = getTemperature();
   #ifdef OLED
     displayTemperature(temp);
   #endif
+  if (digitalRead(16) == 0)
+    sendEmail(temp);
   if (digitalRead(23) == 0){
     goSleep(1000000);
   }
