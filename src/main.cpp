@@ -7,6 +7,7 @@
 #include "credentials.h"  // Visit README.md for more info about this file
 #include "U8g2lib.h"
 #include "ESP32_MailClient.h"
+#include "driver/gpio.h"
 
 U8X8_SSD1306_128X32_UNIVISION_HW_I2C u8x8(U8X8_PIN_NONE, SCL, SDA);
 SMTPData smtpData;
@@ -36,7 +37,10 @@ void initMCU() {
       u8x8_cad_Init(u8x8.getU8x8());
       u8x8_gpio_SetReset(u8x8.getU8x8(), 1);
     }
-    #endif
+  #endif
+  // gpio_pad_select_gpio(LED);
+  // gpio_set_direction(LED, GPIO_MODE_OUTPUT);
+  pinMode(15, OUTPUT);
 }
 
 void goSleep(long us) {
@@ -82,7 +86,11 @@ void sendEmail(float temp) {
 
 void setup() {
   initMCU();
+  // gpio_set_level(LED, 1);
+  digitalWrite(15, 1);
   float temp = getTemperature();
+  // gpio_set_level(LED, 0);
+  digitalWrite(15, 0);
   #ifdef OLED
     displayTemperature(temp);
   #endif
